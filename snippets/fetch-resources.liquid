@@ -1,0 +1,47 @@
+<script type="text/javascript">
+    const parser = str => new DOMParser().parseFromString(str, "text/html"); 
+    const decode = str => parser(str).documentElement.textContent;
+    const getResource = async (resource) => await (await fetch(resource)).json();
+    const types = ["element", "metadata"];
+    const domain = "https://task515-surface-partials--stagingjbm.netlify.com";
+    const resources = {
+        nav: {
+          json: `${domain}/exports/navigation/index.json`,
+            target: "nav-inject",
+            type: "element"
+        },
+        footer: {
+          json: `${domain}/exports/footer/index.json`,
+            target: "footer-inject",
+            type: "element"
+        },
+        style: {
+          json: `${domain}/exports/stylesheets/index.json`,
+            target: "head",
+            type: "metadata"
+        }
+    }
+    const actions = {
+        element(args) {
+            const { target, html } = args;
+            let el = document.getElementById(target);
+            el.innerHTML = el.innerHTML + html;
+        },
+        metadata(args) {
+            const { html } = args;
+            const head = document.getElementsByTagName('head')[0];
+            head.innerHTML = head.innerHTML + html;
+        }
+    }
+    for (const r in resources) {
+        const resource = resources[r];
+        if (!types.includes(resource.type)) continue;
+        getResource(resource.json)
+        .then(json => {
+            const html = decode(json.data.html);
+            const target = resource.target;
+            actions[resource.type]({ html, target });
+        })
+        .catch(err => console.warn(err));
+    }
+</script> 
